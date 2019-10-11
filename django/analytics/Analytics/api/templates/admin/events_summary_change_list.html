@@ -1,0 +1,71 @@
+    <style>
+    .histogram {
+        margin-bottom: 50px;
+    }
+    .bar-chart {
+      display: flex;
+      justify-content: space-around;
+      height: 160px;
+      overflow: hidden;
+      width: 50%;
+      padding-top: 5px;
+    }
+    .bar-chart .bar {
+        flex: 100%;
+        align-self: flex-end;
+        margin-right: 2px;
+        position: relative;
+        background-color: #79aec8;
+        text-align: center;
+    }
+    .bar-chart .bar:last-child {
+        margin: 0;
+    }
+    .bar-chart .bar:hover {
+        background-color: #417690;
+    }
+    .bar-chart .bar .bar-tooltip {
+        position: relative;
+        z-index: 999;
+    }
+    .bar-chart .bar .bar-tooltip {
+        position: absolute;
+        bottom: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        font-weight: bold;
+        opacity: 0;
+    }
+    .bar-chart .bar:hover .bar-tooltip {
+        opacity: 1;
+    }
+
+    </style>
+
+
+{% extends "admin/change_list.html" %}
+{% block content_title %}
+    <h1> Events Summary </h1>
+{% endblock %}
+{% block result_list %}
+    <div class="histogram">
+    <h2>Events Daily Histogram</h2>
+        <div class="bar-chart">
+
+        {% for x in summary_over_time %}
+            <div class="bar" style="height:{{x.pct}}%">
+                <div class="bar-tooltip">
+                    {{x.total | default:0 }}<br>
+                    {{x.period | date:"d/m/Y H:00"}}
+                </div>
+                {{x.period | date:"d/m/Y"}} - {{x.pct}}%
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+
+        {{ block.super }}
+
+    {% endblock %}
+{% block pagination %}{% endblock %}

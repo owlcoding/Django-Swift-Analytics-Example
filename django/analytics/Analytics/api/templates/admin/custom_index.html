@@ -1,0 +1,23 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+  {{ block.super }}
+
+    <h1> Events Summary </h1>
+<table>
+    <tr>
+        <th>start of session</th>
+        <th>session ID</th>
+        <th>time in session</th>
+        <th>number of logged events</th>
+    </tr>
+{% for session in sessions_summary %}
+    <tr>
+        <td>{{session.min}}</td>
+        <td>{{session.client}}</td>
+        <td>{{session.diff}}</td>
+        <td>{{session.number_of_log_entries}}</td>
+    </tr>
+{% endfor %}
+</table>
+{% endblock %}
