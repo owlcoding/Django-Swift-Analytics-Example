@@ -19,17 +19,45 @@ class Logger {
         getLoggingId()
     }
     
+    init(_ loggingID: String) {
+        self.loggingId = loggingID
+    }
+    
     private enum Endpoint: String {
         case client = "http://127.0.0.1:8000/api/clients/"
         case event = "http://127.0.0.1:8000/api/events/"
     }
     
-    private func sendPostRequest(to endpoint: Endpoint, jsonDict: [String: Any], completion: @escaping (Data?, URLResponse?, Error?) -> Void) {
+    private func sendPostRequest(to endpoint: Endpoint, jsonDict: [String: Any], completion: @escaping ([String: Any]?, Int) -> Void) {
         var request = URLRequest(url: URL(string: endpoint.rawValue)!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let jsonData = try! JSONSerialization.data(withJSONObject: jsonDict, options: [])
-        let task = urlSession.uploadTask(with: request, from: jsonData, completionHandler: completion)
+        let task = urlSession.uploadTask(with: request, from: jsonData) { (data, response, error) in
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("Response isn't a HTTP response, something's REALLY, REALLY WRONG!")
+                completion(nil, 500)
+                return
+            }
+            guard httpResponse.statusCode < 400 else {
+                print("HTTP Code: \(httpResponse.statusCode)")
+                completion(nil, httpResponse.statusCode)
+                return
+            }
+            if let error = error {
+                print("POST error: \(error)")
+                completion(nil, httpResponse.statusCode)
+                return
+            }
+            if let data = data {
+                let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+                completion(json, httpResponse.statusCode)
+            } else {
+                print("POST empty response data")
+                completion(nil, httpResponse.statusCode)
+            }
+        }
+        
         task.resume()
     }
     
@@ -38,21 +66,16 @@ class Logger {
             "client_platform" : "iOS 13 SwiftUI",
             "client_version" : "1.0beta1",
         ]
-        sendPostRequest(to: .client, jsonDict: json) { (data, response, error) in
-            guard let data = data else { return }
-            do {
-                let json = try JSONSerialization.jsonObject(with: data, options: []) as! [String: Any]
-                self.loggingId = json["client_hash"] as? String
-                self.processQueueIfPossible()
-            } catch {
-                print("JSON error: \(error.localizedDescription)")
-            }
+        sendPostRequest(to: .client, jsonDict: json) { (json, _) in
+            guard let json = json else { return }
+            self.loggingId = json["client_hash"] as? String
+            self.processQueueIfPossible()
         }
     }
     
     private func processQueueIfPossible() {
         guard let loggingId = loggingId else {
-            print("Can't send events")
+            print("Can't send events - not initialized the logger correctly")
             return
         }
         
@@ -70,17 +93,12 @@ class Logger {
         ]
         
         sendPostRequest(to: .event,
-                        jsonDict: json) { [weak self] (data, response, error) in
-                            guard let data = data else {
+                        jsonDict: json) { [weak self] (json, _) in
+                            guard let json = json else {
                                 self?.eventsQueue.append(firstEvent)
                                 return
                             }
-                            do {
-                                let json = try JSONSerialization.jsonObject(with: data, options: []) as! [String: Any]
-                                print("Log success: ", json)
-                            } catch {
-                                print("JSON error: \(error.localizedDescription)")
-                            }
+                            print("Log success: ", json)
                             self?.processQueueIfPossible()
         }
     }
