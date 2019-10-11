@@ -16,4 +16,4 @@ To run the development server on the default port (8000) use the following comma
 ### Swift part
 Swift part is just a playground. It requires iOS 13 compatible Xcode, because it uses `SwiftUI`. 
 
-The UI is just 2 buttons that log different events, and there's a dumb class that communicates with the analytics server (assuming it's running on localhost, port 8000 - this is easy to change though). ![Swift UI Screenshot](swift/SwiftUI.png)
+The UI is just 2 buttons that log different events, and there's a dumb class that communicates with the analytics server (assuming it's running on localhost, port 8000 - this is easy to change though). ![Swift UI Screenshot](https://github.com/owlcoding/Django-Swift-Analytics-Example/raw/master/swift/SwiftUI.png)
